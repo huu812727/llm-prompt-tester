@@ -18,7 +18,7 @@
 ![n8n Workflow](n8n_workflow.png)
 
 ### Интерактивный Дашборд аналитики:
-Визуализация Win Rate, средних баллов и детальной логики судейства по каждому вопросу.
+Визуализация Win Rate, средних баллов и детальной логики судейства.
 ![Dashboard Preview](dashboard_preview.png)
 
 ---
@@ -29,11 +29,22 @@
 * **Data Science:** Python 3.x, Pandas (Data processing).
 * **LLM Integration:** OpenRouter (Gemini, GPT, Claude).
 * **Reporting:** HTML5/CSS3 Dashboard & Excel exports.
+* **DevOps:** Docker (Containerization).
+
+---
 
 ## 📦 Установка и запуск
 
-1.  Клонируйте репозиторий.
-2.  Установите библиотеки: `pip install pandas requests python-dotenv openpyxl`.
-3.  Добавьте ваш `OPENROUTER_API_KEY` в файл `.env`.
-4.  Запустите воркфлоу в n8n для генерации `file.csv`.
-5.  Выполните анализ: `python judge.py`.
+### Вариант 1: Через Docker (Рекомендуется)
+Гарантирует работу без установки Python и библиотек на ваш компьютер.
+
+1. **Сборка образа:**
+   docker build -t ai-judge-v2 .
+
+2. **Запуск анализа:**
+   docker run -v ${PWD}:/app ai-judge-v2
+
+### Вариант 2: Локально (Python)
+1. Установите зависимости: pip install pandas requests python-dotenv openpyxl
+2. Настройте API-ключ в файле .env.
+3. Запустите: python judge.py
