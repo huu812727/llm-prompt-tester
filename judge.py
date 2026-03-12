@@ -42,7 +42,8 @@ def evaluate_pair(question, ideal, a, b):
     payload = {
         "model": "google/gemini-2.0-flash-lite-001",
         "messages": [{"role": "user", "content": prompt}],
-        "response_format": { "type": "json_object" }
+        "response_format": { "type": "json_object" },
+        "temperature": 0
     }
     
     try:

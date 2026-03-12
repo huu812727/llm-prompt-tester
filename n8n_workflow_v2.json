@@ -1,0 +1,371 @@
+{
+  "name": "LLM Benchmarking V2 (Fault Tolerant)",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8e8bf5ae-e8ac-467e-b137-b10e81aa51e1",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    \"question\": \"Пользователь хочет зайти в ликвидный стейкинг на Ethereum, но боится резкого депега (отвязки цены) LST-токена. Какие 3 конкретных индикатора в ончейн-метриках он должен мониторить, чтобы выйти вовремя?\",\n    \"ideal_answer\": \"Мониторинг соотношения резервов в пулах ликвидности (например, Curve), объем выкупов (redemptions) у протокола и динамику скидки (discount) на вторичном рынке.\"\n  },\n  {\n    \"question\": \"Клиент спрашивает: «Могу ли я вернуть деньги за онлайн-курс, если я просмотрел только 20% уроков, но в оферте написано, что возврат невозможен после получения доступа?». Ответь с точки зрения закона о защите прав потребителей РФ.\",\n    \"ideal_answer\": \"Да, потребитель имеет право отказаться от услуг в любое время, оплатив исполнителю фактически понесенные расходы (ФПР). Условие в оферте о полном запрете возврата ущемляет права потребителя и считается ничтожным.\"\n  },\n  {\n    \"question\": \"Сравни риск-профиль предоставления ликвидности в пулы Uniswap v3 (узкий диапазон) и классический фарминг в PancakeSwap v2. В каком случае Impermanent Loss ударит сильнее при росте цены актива на 50%?\",\n    \"ideal_answer\": \"В Uniswap v3 при узком диапазоне концентрация ликвидности выше, поэтому Impermanent Loss (непостоянные потери) наступит быстрее и будет значительно больше, чем в широком диапазоне v2.\"\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        176,
+        0
+      ],
+      "id": "43d096e0-58a9-4764-995b-489ef6e55708",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "HTTP-Referer",
+              "value": "http://localhost:5678"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"google/gemini-2.0-flash-lite-001\", \n  \"messages\": [\n    { \"role\": \"system\", \"content\": \"Отвечай максимально коротко и сухо.\" },\n    { \"role\": \"user\", \"content\": \"{{ $json.question }}\" }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        -256
+      ],
+      "id": "8823245b-8894-4ca2-baf3-392d4fd515c9",
+      "name": "LLM_Prompt_A",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cf9MVHvtOKcZ4fZv",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        896,
+        -144
+      ],
+      "id": "027f198d-e1b2-477b-a6f3-ce8c9070f20e",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0a53483b-f5ef-4092-ae2e-b42f9cf44aa0",
+              "name": "question",
+              "value": "={{ $('Code in JavaScript').item.json.question }}",
+              "type": "string"
+            },
+            {
+              "id": "93cf32cf-462a-4ac1-abc4-99918ef97ea5",
+              "name": "ideal_answer",
+              "value": "={{ $('Code in JavaScript').item.json.ideal_answer }}",
+              "type": "string"
+            },
+            {
+              "id": "a1f4ff26-1d40-44bc-9c13-89854331520d",
+              "name": "answer_a",
+              "value": "={{ $('LLM_Prompt_A').item.json.choices[0].message.content }}",
+              "type": "string"
+            },
+            {
+              "id": "b9a4994b-7dd4-4253-8b64-7db088e42e94",
+              "name": "answer_b",
+              "value": "={{ $('LLM_Prompt_B').item.json.choices[0].message.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1104,
+        -16
+      ],
+      "id": "1f613c59-c7a0-4fa9-9e05-3e8696475d21",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "HTTP-Referer",
+              "value": "http://localhost:5678"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"google/gemini-2.0-flash-lite-001\", \n  \"messages\": [\n    { \"role\": \"system\", \"content\": \"Используй технику Chain-of-Thought. Сначала подробно рассуждай, анализируй детали, а в конце выдай итоговый ответ.\" },\n    { \"role\": \"user\", \"content\": \"{{ $json.question }}\" }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        656,
+        176
+      ],
+      "id": "5c2fa0f1-a941-41c8-8a25-3ff51c62beb7",
+      "name": "LLM_Prompt_B",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cf9MVHvtOKcZ4fZv",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1264,
+        -16
+      ],
+      "id": "0c3479e1-c0d5-4af6-877c-af116fb3bb84",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4cb6f6fc-a0b4-43c1-ac59-94d8121d361f",
+              "name": "question_id",
+              "value": "={{ $itemIndex }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        352,
+        0
+      ],
+      "id": "1440c8df-fed6-46e1-8a09-9e312687ef7a",
+      "name": "Assign Question ID"
+    },
+    {
+      "parameters": {
+        "batchSize": 5,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        512,
+        0
+      ],
+      "id": "a037efa2-1bd5-460e-8126-f68dd061f294",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        176
+      ],
+      "id": "7610684a-0226-4f19-b09c-322e31dd38c8",
+      "name": "Wait",
+      "webhookId": "9eee4ff2-99d9-486e-b81b-365e7653723d"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Assign Question ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM_Prompt_A": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM_Prompt_B": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        []
+      ]
+    },
+    "Assign Question ID": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LLM_Prompt_A",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "LLM_Prompt_B",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "c6df1474-680a-4620-bd0f-e9ddcacff96f",
+  "meta": {
+    "instanceId": "13a9309d1fbfa17ec01066f4b8570d58587e754b82e83f4e9362dd4b0e373a55"
+  },
+  "id": "vHTxVJwa2PCYX7Tf",
+  "tags": []
+}
